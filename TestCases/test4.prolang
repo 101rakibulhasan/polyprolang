@@ -1,0 +1,39 @@
+~HEAD>
+
+# topic: "Prolang Code Tester"
+# explanation: "This is a test code! You know the rest of it!"
+# version: "1.0" 
+
+<HEAD~
+
+~>>
+hello senorita========
+# name: "CppTest"
+# prolang: "C++"
+# extension: "cpp"
+# description: "A Simple C++ Code"
+~BEGIN>
+
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    cout << "Hello World!" << endl;
+    return 0;
+}
+
+<END~
+
+this is a bug
+~>>
+
+# name: "PythonTest"
+# prolang: "Python"
+# extension: "py"
+# description: "A Simple Python Code"
+~BEGIN>
+
+print("Hello World!");
+
+<END~
