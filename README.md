@@ -1,5 +1,4 @@
-Project Title: PolyProLang - A new way to contain codes
-Project Description:
+PolyProLang: Unifying Solutions, Diverse Languages.
 
 In a rapidly evolving technology landscape, the ability to solve problems using various programming languages is a valuable skill. PolyProLang project aims to provide a platform for developers and problem solvers to create, store, and execute algorithm implementations in multiple programming languages, all within a unified ".prolang" file format. This project serves several key purposes:
 
