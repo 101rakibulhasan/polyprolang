@@ -8,9 +8,99 @@ using namespace std;
 
 using ull = unsigned long long int;
 
+string HEAD_START = "~HEAD>";
+string HEAD_END = "<HEAD~";
+string BODY_START = "~BODY>";
+string BODY_END = "<BODY~";
+string CHUNK_START = "~>>";
+string CHUNK_END = "<<~";
+string CODE_START = "~BEGIN>";
+string CODE_END = "<END~";
+
+bool headStartFound;
+bool bodyStartFound;
+bool headEndFound;
+bool bodyEndFound;
+bool chunkStartFound;
+bool codeStartFound;
+bool chunkEndFound;
+bool codeEndFound;
+
 string ConvertFileToString(string filename);
 void ConvertStringToFile(string data, string filename);
 string RemoveSpaceNewLine(string data);
+
+void cls()
+{
+    system("cls");
+}
+
+string RefineData(string data)
+{
+    for(ull i = 0; i < data.size(); i++)
+    {
+        if(data[i] == '~')
+        {
+            string temp = data.substr(i, 6);
+            if ((temp == HEAD_START || temp == BODY_START) && headStartFound == false && bodyStartFound == false)
+            {
+                if(temp == HEAD_START)
+                {
+                    headStartFound = true;
+                }
+
+                if(temp == BODY_START)
+                {
+                    bodyStartFound = true;
+                }
+                
+                i+=6;
+
+                for(ull j =i; j < i+2; j++)
+                {
+                    if(data[j] != '\n')
+                    {
+                        data.insert(j,1,'\n');
+                    }
+                }
+                
+            }else
+            {
+                string temp = data.substr(i, 3);
+                if (temp == CHUNK_START)
+                {
+                    chunkStartFound = true;
+                }
+            }
+        }else if(data[i] == '<')
+        {
+            string temp = data.substr(i, 6);
+            if (temp == HEAD_END)
+            {
+                if(temp == HEAD_END)
+                {
+                    headEndFound = true;
+                }
+
+                if(temp == BODY_END)
+                {
+                    bodyEndFound = true;
+                }
+                i+=6;
+                for(ull j =i; j < i+2; j++)
+                {
+                    if(data[j] != '\n')
+                    {
+                        data.insert(j,1,'\n');
+                    }
+                }
+
+            }
+        }
+    }
+    //cout << data << endl;
+    return data;
+}
 
 class MetaData
 {
@@ -28,11 +118,6 @@ public:
 
     void readData(string x)
     {
-        string HEAD_START = "~HEAD>";
-        string HEAD_END = "<HEAD~";
-        string BODY_START = "~BODY>";
-        string BODY_END = "<BODY~";
-
         int headStartIndex = -1;
         int bodyStartIndex = -1;
         int headEndIndex = -1;
@@ -46,19 +131,19 @@ public:
             if (x[i] == '~')
             {
                 string temp = x.substr(i, 6);
-                if (temp == HEAD_START)
+                if (temp == HEAD_START && headStartIndex == -1)
                 {
                     headStartIndex = i + 6;
                 }
-                else if (temp == BODY_START)
+                else if (temp == BODY_START &&  bodyStartIndex == -1)
                 {
                     bodyStartIndex = i + 6;
                 }
             }
-            else if (x[i] == '<')
+            else if (x[i] == '<' && x[i-1] == '\n')
             {
                 string temp = x.substr(i, 6);
-                if (temp == HEAD_END)
+                if (temp == HEAD_END && headEndIndex == -1)
                 {
                     headEndIndex = i - 1;
                 }
@@ -69,7 +154,7 @@ public:
             }
         }
 
-        // cout << headStartIndex << " " << headEndIndex << " " << bodyStartIndex << " " << bodyEndIndex << endl;
+        //cout << headStartIndex << " " << headEndIndex << " " << bodyStartIndex << " " << bodyEndIndex << endl;
 
         if (headStartIndex != -1 && headEndIndex != -1 && bodyStartIndex != -1 && bodyEndIndex != -1)
         {
@@ -133,8 +218,12 @@ public:
                 att = RemoveSpaceNewLine(att);
                 transform(att.begin(), att.end(), att.begin(), ::tolower); 
                 string unfiltered;
-                while(head[j] != '\n' && j<head.size())
+                while(j<head.size())
                 {
+                    if(head[j] == '\n'&& head[j-1] == '\"' && (head[j+1] == '#' || head[j+1] == '\n'))
+                    {
+                        break;
+                    }
                     unfiltered +=head[j];
                     j++;
                 }
@@ -171,24 +260,32 @@ public:
             {
                 quotationMark++;
                 i++;
-            }
-
-            if(quotationMark == 1)
-            {
-                res +=x[i];
+                while(i < x.size())
+                {
+                    if(x[i] == '\"')
+                    {
+                        quotationMark++;
+                        break;
+                    }
+                    res += x[i];
+                    i++;
+                }
             }
         }
 
-        if(quotationMark <1 || quotationMark >2)
+        if(quotationMark <=1)
         {
+            cout << x << endl;
             cout << "Invalid Values" << endl;
         }
         return res;
     }
 
-    void SetTopic(string x) { topic = x; }
-    void SetExplanation(string x) { explanation = x; }
-    void SetVersion(string x) { version = x; }
+    void SetTopic(string x) {
+        if(topic.empty()) topic = x; 
+    }
+    void SetExplanation(string x) { if(explanation.empty()) explanation = x; }
+    void SetVersion(string x) { if(version.empty()) version = x; }
 
     string GetTopic() { return topic; }
     string GetExplanation() { return explanation; }
@@ -214,15 +311,25 @@ public:
             {
                 quotationMark++;
                 i++;
-            }
-
-            if(quotationMark == 1)
-            {
-                res +=x[i];
+                while(i < x.size())
+                {
+                    if(x[i] == '\"' || x[i+1] == '\n')
+                    {
+                        if(x[i] == '\"')
+                        {
+                            quotationMark++;
+                        }
+                        break;
+                    }
+                    res += x[i];
+                    i++;
+                }
             }
         }
 
-        if(quotationMark <1 || quotationMark >2)
+        //cout <<"FD: " << res << endl;
+
+        if(quotationMark <=1)
         {
             cout << "Invalid Values" << endl;
         }
@@ -262,7 +369,7 @@ public:
                 i=j;
 
                 if(att == NAME_ATT)
-                { 
+                {
                    SetName(GetAttributeValue(unfiltered));
                 }else if(att == PROLANG_ATT)
                 {
@@ -282,7 +389,7 @@ public:
                 int flag_err = 0;
                 if(flag_err == 1) break;
                 string checkSyntax = data.substr(i, 7);
-                if (checkSyntax == "~BEGIN>")
+                if (checkSyntax == CODE_START_ATT)
                 {
                     i += 7;
                     while (true)
@@ -291,37 +398,35 @@ public:
                         {
                             flag_err = 1;
                             cout << "No Code End Found!" << endl;
-                            tempcode = "";
                             break;
                         }
 
-                        if (data[i] == '<')
+                        if (data[i] == '<' && data[i-1] == '\n')
                         {
                             checkSyntax = data.substr(i, 5);
-                            if (checkSyntax == "<END~")
+                            if (checkSyntax == CODE_END_ATT)
                             {
-                                break;
+                                break;   
                             }
                         }
 
                         tempcode += data[i];
-
                         i++;
                     }
                     tempcode = RemoveSpaceNewLine(tempcode);
                     SetCode(tempcode);
-                    // cout << GetCode() << endl;
+                    //cout << GetCode() << endl;
                     tempcode = "";
                 }
             }
         }
     }
 
-    void SetName(string x) { name = x; }
-    void SetProlang(string x) { prolang = x; }
-    void SetExtension(string x) { extension = x; }
-    void SetDescription(string x) { description = x; }
-    void SetCode(string x) { code = x; }
+    void SetName(string x) { if(name.empty()) name = x; }
+    void SetProlang(string x) { if(prolang.empty()) prolang = x; }
+    void SetExtension(string x) { if(extension.empty()) extension = x; }
+    void SetDescription(string x) { if(description.empty()) description = x; }
+    void SetCode(string x) { if(code.empty()) code = x; }
 
     string GetName() { return name; }
     string GetProlang() { return prolang; }
@@ -361,7 +466,7 @@ public:
                             break;
                         }
 
-                        if(data[i] == '<')
+                        if(data[i] == '<' && data[i-1] == '\n')
                         {
                             checkSyntax = data.substr(i,3);
                             if(checkSyntax == "<<~")
@@ -442,7 +547,7 @@ void ConvertStringToFile(string data, string filename)
     }
     catch (...)
     {
-        cout << "Can not convert String to File!";
+        cout << "Can not convert String to File!" << endl;;
     }
 }
 
@@ -473,55 +578,105 @@ string RemoveSpaceNewLine(string data)
     return data;
 }
 
-void GenerateProLangChunksToFile()
-{
-    // NEEDS WORK LATER
-}
 
 void DebugEverything(SCANCHUNKS_CLASS scc,HEADER_CLASS hc,BODYCHUNK bc)
 {
-    cout << "SCAN HEAD->" << endl;
-    cout << scc.GetHead() << endl;
-    cout << "-----------------" << endl;
+    // cout << "SCAN HEAD->" << endl;
+    // cout << scc.GetHead() << endl;
+    // cout << "-----------------" << endl;
     cout << "SCAN BODY->" << endl;
     cout << scc.GetBody() << endl;
     cout << "-----------------" << endl;
 
-    cout << "GET TOPIC->" << endl;
-    cout << "\"" << hc.GetTopic() << "\"" << endl;
-    cout << "-----------------" << endl;
-    cout << "GET EXPLANATION->" << endl;
-    cout << "\"" << hc.GetExplanation() << "\"" << endl;
-    cout << "-----------------" << endl;
-    cout << "GET VERSION->" << endl;
-    cout << "\"" << hc.GetVersion() << "\"" << endl;
-    cout << "-----------------" << endl;
+    // cout << "GET TOPIC->" << endl;
+    // cout << "\"" << hc.GetTopic() << "\"" << endl;
+    // cout << "-----------------" << endl;
+    // cout << "GET EXPLANATION->" << endl;
+    // cout << "\"" << hc.GetExplanation() << "\"" << endl;
+    // cout << "-----------------" << endl;
+    // cout << "GET VERSION->" << endl;
+    // cout << "\"" << hc.GetVersion() << "\"" << endl;
+    // cout << "-----------------" << endl;
 
-    list<PROLANG_CLASS> l = bc.GetListChuncks();
-    for(auto it: l)
+    // list<PROLANG_CLASS> l = bc.GetListChuncks();
+    // for(auto it: l)
+    // {
+    //     cout << "GET NAME->" << endl;
+    //     cout << "\"" << it.GetName() << "\"" << endl;
+    //     cout << "-----------------" << endl;
+    //     cout << "GET PROLANG->" << endl;
+    //     cout << "\"" << it.GetProlang() << "\"" << endl;
+    //     cout << "-----------------" << endl;
+    //     cout << "GET EXTENSION->" << endl;
+    //     cout << "\"" << it.GetExtension() << "\"" << endl;
+    //     cout << "-----------------" << endl;
+    //     cout << "GET DESCRIPTION->" << endl;
+    //     cout << "\"" << it.GetDescription() << "\"" << endl;
+    //     cout << "-----------------" << endl;
+    //     cout << "GET CODE->" << endl;
+    //     cout << "\"" << it.GetCode() << "\"" << endl;
+    //     cout << "-----------------" << endl;
+    // }
+}
+
+
+void ExtractCode(PROLANG_CLASS pc)
+{
+    string filename = pc.GetName() + "." + pc.GetExtension();
+    ConvertStringToFile(pc.GetCode(), filename);
+}
+
+void ViewAvailableCodes(list<PROLANG_CLASS> l)
+{
+    while(true)
     {
-        cout << "GET NAME->" << endl;
-        cout << "\"" << it.GetName() << "\"" << endl;
+        //cls();
+        cout << "Available Codes: " << endl;
+        int index = 1;
+        for(auto it: l)
+        {
+            cout << index  <<" : "<< it.GetName()<< "." << it.GetExtension() <<endl;
+            index++;
+        }
+
         cout << "-----------------" << endl;
-        cout << "GET PROLANG->" << endl;
-        cout << "\"" << it.GetProlang() << "\"" << endl;
+        cout << "Type \' 0 \' for all" << endl;
+        cout << "Extract Index >> ";
+        int extractIndex;
+        cin >> extractIndex;
+
+        if(extractIndex != 0)
+        {
+            auto it = l.begin();
+            advance(it, extractIndex - 1);
+            ExtractCode(*it);
+            cout << "\nEXTRACTING "<< extractIndex <<"...\n" << endl;
+
+        }else
+        {
+            int ind = 1;
+            for(auto it: l)
+            {
+                ExtractCode(it);
+                cout << "\nEXTRACTING "<< ind <<"...\n" << endl;
+                ind++;
+            }
+        }
+
         cout << "-----------------" << endl;
-        cout << "GET EXTENSION->" << endl;
-        cout << "\"" << it.GetExtension() << "\"" << endl;
-        cout << "-----------------" << endl;
-        cout << "GET DESCRIPTION->" << endl;
-        cout << "\"" << it.GetDescription() << "\"" << endl;
-        cout << "-----------------" << endl;
-        cout << "GET CODE->" << endl;
-        cout << "\"" << it.GetCode() << "\"" << endl;
-        cout << "-----------------" << endl;
+
+        cout << "Do you want to extract another code? (y/n) >> ";
+        char choice; cin >> choice;
+        if(choice == 'n' || choice == 'N') break;
     }
 }
 
 int main()
 {
-    string filename = "test.prolang";
+    string filename = "goodboy.prolang";
     string filedata = ConvertFileToString(filename);
+    filedata = RefineData(filedata);
+    //cout << filedata << endl;
 
     SCANCHUNKS_CLASS scc;
     scc.readData(filedata); 
@@ -532,7 +687,9 @@ int main()
     BODYCHUNK bc;
     bc.readBody(scc.GetBody());  
 
-    DebugEverything(scc,hc,bc);
+    // DebugEverything(scc,hc,bc);
+
+    ViewAvailableCodes(bc.GetListChuncks());
 
     return 0;
 }
