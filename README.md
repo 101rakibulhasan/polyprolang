@@ -1,5 +1,7 @@
 PolyProLang: Unifying Solutions, Diverse Languages.
 
+![Cover Image](./Resources/cover.png)
+
 In a rapidly evolving technology landscape, the ability to solve problems using various programming languages is a valuable skill. PolyProLang project aims to provide a platform for developers and problem solvers to create, store, and execute algorithm implementations in multiple programming languages, all within a unified ".prolang" file format. This project serves several key purposes:
 
 1. Diverse Language Solutions: The project encourages the use of different programming languages to solve common problems. ".prolang" files serve as containers for these diverse solutions, making it easy to compare and contrast various language implementations.
