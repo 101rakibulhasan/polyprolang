@@ -671,9 +671,10 @@ void ViewAvailableCodes(list<PROLANG_CLASS> l)
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-    string filename = "goodboy.prolang";
+    cout << argv[0] << endl;
+    string filename = argv[1];
     string filedata = ConvertFileToString(filename);
     filedata = RefineData(filedata);
     //cout << filedata << endl;
